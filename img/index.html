@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Carrito de Playeras</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-black flex items-center justify-center min-h-screen text-white">
+<div class="bg-gray-900 shadow-lg rounded-2xl p-6 w-full max-w-md">
+  <h1 class="text-2xl font-bold mb-4 text-center text-white">PEDIDO DE PLAYERAS</h1>
+
+  <!-- Vista previa de la playera con diseño -->
+  <canvas id="canvasPlayera" width="400" height="400" class="rounded-xl shadow-md mb-4 w-full"></canvas>
+
+  <!-- Selección de opciones -->
+  <div class="space-y-4">
+    <label class="block">
+      <span class="font-semibold text-white">Talla</span>
+      <select id="talla" class="w-full mt-1 p-2 border rounded-lg bg-gray-800 text-white">
+        <option>CH</option>
+        <option>MD</option>
+        <option>G</option>
+        <option>XL</option>
+        <option>XXL</option>
+      </select>
+    </label>
+
+    <label class="block">
+      <span class="font-semibold text-white">Color</span>
+      <select id="color" class="w-full mt-1 p-2 border rounded-lg bg-gray-800 text-white">
+        <option value="Blanco">Blanco</option>
+        <option value="Negro">Negro</option>
+        <option value="Rojo">Rojo</option>
+        <option value="Gris">Gris</option>
+      </select>
+    </label>
+
+    <label class="block">
+      <span class="font-semibold text-white">Diseño</span>
+      <select id="diseño" class="w-full mt-1 p-2 border rounded-lg bg-gray-800 text-white">
+        <option value="">Selecciona un diseño</option>
+        <option value="Flags">Tommy Hilfiger Flags</option>
+        <option value="grande">Logo Grande</option>
+        <option value="especial">Edición Especial</option>
+        <option value="Caja_Nike">Caja Nike</option>
+      </select>
+    </label>
+
+    <label class="block">
+      <span class="font-semibold text-white">Cantidad</span>
+      <input type="number" id="cantidad" min="1" value="1" class="w-full mt-1 p-2 border rounded-lg bg-gray-800 text-white">
+    </label>
+
+    <button id="btnAgregar" class="w-full bg-green-600 text-white p-3 rounded-xl font-bold hover:bg-green-700 transition">
+      ➕ Agregar al Carrito
+    </button>
+  </div>
+
+  <!-- Carrito (sin imágenes) -->
+  <div class="mt-6">
+    <h2 class="text-xl font-semibold mb-2 text-white">🛒 Carrito</h2>
+    <ul id="carrito" class="space-y-2 text-gray-300"></ul>
+  </div>
+
+  <!-- Formulario oculto -->
+  <form id="pedidoForm" action="https://formspree.io/f/xblappbe" method="POST" class="mt-6">
+    <input type="hidden" name="pedido" id="pedidoInput">
+    <button type="submit" class="w-full bg-blue-600 text-white p-3 rounded-xl font-bold hover:bg-blue-700 transition">
+      ✅ Enviar Pedido
+    </button>
+  </form>
+</div>
+
+<script>
+const canvas = document.getElementById("canvasPlayera");
+const ctx = canvas.getContext("2d");
+
+const colores = {
+  Blanco:"tshirtwhite.png",
+  Negro:"tshirtnegra.png",
+  Rojo:"tshirtred.png",
+  Gris:"tshirtgray.png",
+  "":"tshirtwhite.png"
+};
+
+const diseños = {
+  Flags:"tommybanderas.png",
+  grande:"playera-logo-grande.png",
+  especial:"playera-edicion-especial.png",
+  Caja_Nike:"cajanike.png",
+  "":""
+};
+
+let carrito = [];
+
+// Función para dibujar la vista previa (canvas)
+function dibujarPlayera() {
+  const color = document.getElementById("color").value;
+  const diseño = document.getElementById("diseño").value;
+
+  const imgColor = new Image();
+  imgColor.src = colores[color] || colores[""];
+  imgColor.onload = () => {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    ctx.drawImage(imgColor,0,0,canvas.width,canvas.height);
+
+    if(diseño){
+      const imgDiseño = new Image();
+      imgDiseño.src = diseños[diseño];
+      imgDiseño.onload = ()=>{
+        ctx.drawImage(imgDiseño,0,0,canvas.width,canvas.height);
+      }
+    }
+  }
+}
+
+// Actualizar vista previa al cambiar color o diseño
+document.getElementById("color").addEventListener("change", dibujarPlayera);
+document.getElementById("diseño").addEventListener("change", dibujarPlayera);
+
+// Agregar al carrito (solo texto, sin imagen)
+document.getElementById("btnAgregar").addEventListener("click", ()=>{
+  const talla = document.getElementById("talla").value;
+  const color = document.getElementById("color").value;
+  const diseño = document.getElementById("diseño").value;
+  const cantidad = document.getElementById("cantidad").value;
+
+  if(!talla || !color || !diseño || cantidad < 1){
+    alert("Selecciona talla, color, diseño y cantidad");
+    return;
+  }
+
+  const producto = {
+    descripcion: `${cantidad}x | Talla: ${talla}, Color: ${color}, Diseño: ${diseño}`
+  };
+
+  carrito.push(producto);
+  mostrarCarrito();
+});
+
+function mostrarCarrito(){
+  const lista = document.getElementById("carrito");
+  lista.innerHTML = "";
+
+  carrito.forEach((item,index)=>{
+    const li = document.createElement("li");
+    li.className="flex justify-between items-center bg-gray-800 p-2 rounded-lg";
+    li.innerHTML=`
+      <span>${item.descripcion}</span>
+      <button onclick="eliminarItem(${index})" class="text-red-600 font-bold ml-2">X</button>
+    `;
+    lista.appendChild(li);
+  });
+
+  document.getElementById("pedidoInput").value = carrito.map(i=>i.descripcion).join(" | ");
+}
+
+function eliminarItem(index){
+  carrito.splice(index,1);
+  mostrarCarrito();
+}
+
+// Inicializar vista previa
+dibujarPlayera();
+</script>
+</body>
+</html>
